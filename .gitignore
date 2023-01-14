@@ -3,3 +3,4 @@ package-lock.json
 .eslintrc*
 node_modules
 keys.json
+stops.json
