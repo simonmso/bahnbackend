@@ -16,8 +16,6 @@ const names = [
 const stops = names.map((n, i) => ({
     id: `${i}`,
     name: n,
-    show: true,
-    real: true,
     category: 'RE',
     line: '85',
     futureStops: names.slice(i + 1),
