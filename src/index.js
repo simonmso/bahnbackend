@@ -5,14 +5,19 @@ const jStops = JSON.stringify(stops);
 
 const server = http.createServer();
 server.on('request', (req, resp) => {
-    const { method } = req;
-    if (method === 'GET') {
+    const { method, url } = req;
+    if (method === 'GET' && url === '/api') {
         resp.setHeader('Content-Type', 'application/json');
         resp.write(jStops);
-        resp.end();
+    }
+    if (method === 'GET' && url === '/api') {
+        resp.setHeader('Content-Type', 'text/html')
+        
+
     }
     else {
         resp.statusCode = 405;
+        resp.end();
     }
 });
 server.listen(8080);
