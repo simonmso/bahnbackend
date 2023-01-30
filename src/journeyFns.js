@@ -1,25 +1,23 @@
+/* eslint-disable max-len */
+/* eslint-disable no-unused-vars */
+// TODO
 const { Temporal } = require('@js-temporal/polyfill');
+const fs = require('fs/promises');
 const knownHbfs = require('./knownHbfs.json');
 const knownStations = require('./knownStations.json');
-const { getRandomKey, lessThanXApart } = require('./helpers');
+const {
+    getRandomKey,
+    lessThanXApart,
+    stopInFuture,
+    stopInNext,
+} = require('./helpers');
 const API = require('./consumer');
+const { logProblems } = require('./helpers');
+const cfg = require('./config.json');
 
 const applyChangesToStop = (s, changes) => {
-    const newStop = { ...s };
     const change = changes.find((c) => c.id === s.id);
-    if (change) {
-        Object.keys(s).forEach((k) => {
-            newStop[k] = change[k] || s[k];
-        });
-    }
-    return newStop;
-};
-
-const confirmActualTime = (stop) => {
-    const s = { ...stop };
-    s.departureTime = s.departureTime || s.plannedDepartureTime;
-    s.arrivalTime = s.arrivalTime || s.plannedArrivalTime;
-    s.show = s.real;
+    if (change) return s.with(change);
     return s;
 };
 
@@ -40,22 +38,13 @@ const stopIsRelevant = (s) => {
 const updateWithDelays = (stops, evaNo) => (
     API.getAllChanges(evaNo)
         .then((changes) => stops.map((s) => applyChangesToStop(s, changes)))
-        .then((updated) => updated.map((s) => confirmActualTime(s)))
 );
 
 const updateStopWithDelays = (s) => {
-    if (s.eva && s.real) {
-        if (!s.departureTime && !s.arrivalTime) { // if delays have never been applied
-            return API.getAllChanges(s.eva)
-                .then((changes) => applyChangesToStop(s, changes))
-                .then((changed) => confirmActualTime(changed));
-        }
-        return API.getRecentChanges(s.eva)
-            .then((changes) => applyChangesToStop(s, changes));
-    }
-    return new Promise((resolve) => {
-        resolve(s);
-    });
+    const changes = !s.departureTime && !s.arrivalTime
+        ? API.getAllChanges(s.eva)
+        : API.getRecentChanges(s.eva);
+    return changes.then((cs) => applyChangesToStop(s, cs));
 };
 
 const findSoonestDepartureFromStation = async (evaNo) => {
@@ -65,11 +54,22 @@ const findSoonestDepartureFromStation = async (evaNo) => {
     if (now.minute > 30) plans.push(API.getPlanForTime(evaNo, now.add({ hours: 1 })));
 
     const relevant = await Promise.all(plans)
-        .then((r) => updateWithDelays(r.flat(), evaNo))
-        .then((updated) => updated.filter((s) => stopIsRelevant(s)))
+        .then((r) => {
+            console.log('planned');
+
+            // console.table(r.flat(), ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
+
+            return updateWithDelays(r.flat(), evaNo);
+        })
+        .then((updated) => {
+            console.log('updated');
+
+            // console.table(updated, ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
+            return updated.filter((s) => stopIsRelevant(s));
+        })
         .catch((e) => console.error(e));
     console.log('relevant');
-    console.table(relevant, ['category', 'line', 'number', 'name']);
+    console.table(relevant, ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
 
     if (!relevant?.length) return undefined;
 
@@ -81,8 +81,11 @@ const findSoonestDepartureFromStation = async (evaNo) => {
 };
 
 const findSoonestFromRandom = async (hbf = false) => {
-    const stationName = getRandomKey(hbf ? knownHbfs : knownStations);
-    const evaNo = knownStations[stationName];
+    // TODO
+    // const stationName = getRandomKey(hbf ? knownHbfs : knownStations);
+    // const evaNo = knownStations[stationName];
+    const stationName = 'Berlin(forced)';
+    const evaNo = 8011160;
     const nearest = await findSoonestDepartureFromStation(evaNo);
     if (nearest) {
         nearest.eva = evaNo;
@@ -94,49 +97,31 @@ const findSoonestFromRandom = async (hbf = false) => {
 const findStopInStation = async (tripId, stationName, latestStopTime, future = true) => {
     let testingTime = latestStopTime;
     const evaNo = knownStations[stationName];
-    let problem;
 
     while (lessThanXApart(testingTime, latestStopTime, { hours: 10 })) {
-        if (!evaNo) {
-            console.log(`could not find eva for ${stationName}`);
-            problem = 'unknown eva';
-            break;
-        }
-        try {
-            // disabling because the loop should only try one plan at a time
-            // eslint-disable-next-line no-await-in-loop
-            const stop = await API.getPlanForTime(evaNo, testingTime)
-                .then((stops) => stops.find((s) => s.tripId === tripId));
+        if (!evaNo) throw new Error(`unknown eva for: ${stationName}`);
 
-            if (stop) {
-                stop.name = stationName;
-                stop.show = false;
-                stop.eva = evaNo;
-                return stop;
-            }
-        }
-        catch (e) {
-            problem = e;
-            break;
+        // disabling because the loop should only try one plan at a time
+        // eslint-disable-next-line no-await-in-loop
+        const stop = await API.getPlanForTime(evaNo, testingTime)
+            .then((stops) => stops.find((s) => s.tripId === tripId));
+
+        if (stop) {
+            stop.name = stationName;
+            stop.eva = evaNo;
+            return stop;
         }
 
         testingTime = future
             ? testingTime.add({ hours: 1 })
             : testingTime.subtract({ hours: 1 });
     }
-    console.log('could not find stop in station', stationName);
-    return {
-        show: false,
-        tripId,
-        name: stationName,
-        eva: evaNo,
-        problem,
-    };
+    throw new Error('no stop found in next ten hours');
 };
 
 // eslint-disable-next-line no-unused-vars
 const buildJourneyForNextHour = async (stop) => {
-    let latestStopTime = stop.departureTime;
+    let latestStopTime = stop.plannedDepartureTime;
     const nextHour = [stop];
     const problems = [];
 
@@ -147,21 +132,81 @@ const buildJourneyForNextHour = async (stop) => {
         if (!lessThanXApart(latestStopTime, now, { hours: 1 })) break;
         // eslint-disable-next-line no-await-in-loop
         const newStop = await findStopInStation(stop.tripId, stop.futureStops[i], latestStopTime)
-            .then((s) => (s.real ? updateStopWithDelays(s) : s));
-        if (newStop.real) {
+            .then((s) => (
+                API.getAllChanges(s.eva)
+                    .then((cs) => applyChangesToStop(s, cs))
+            ))
+            .catch((e) => ({
+                tripId: stop.tripId,
+                name: stop.futureStops[i],
+                problem: e,
+            }));
+
+        if (!newStop.problem) {
             latestStopTime = newStop.plannedDepartureTime;
             nextHour.push(newStop);
         }
         else problems.push(newStop);
     }
 
-    return {
-        stops: nextHour,
-        problems: problems.length ? problems : undefined,
-    };
+    if (problems.length) {
+        console.warn('WARNING: Problems occured');
+        logProblems(problems);
+    }
+
+    return nextHour;
+};
+
+const refreshCurrentJourney = async (oldStops, now) => {
+    let newStops = oldStops?.filter((s) => stopInFuture(s, now));
+
+    await Promise.all(newStops.map((s) => (
+        API.getRecentChanges(s.eva)
+            .then((cs) => applyChangesToStop(s, cs))
+    )));
+
+    // if the furthest stop is less than an hour away,
+    // get some stops after it
+    const lastStop = newStops[newStops.length - 1];
+    if (lastStop.futureStops?.length && stopInNext(lastStop, { hours: 1 }, now)) {
+        const stops = await buildJourneyForNextHour(lastStop);
+        if (stops?.length) newStops = newStops.concat(stops.slice(1));
+    }
+
+    if (newStops) {
+        fs.writeFile(cfg.stopsPath, JSON.stringify(newStops), { flag: 'w+' }, (e) => {
+            if (e) throw e;
+        });
+    }
+};
+
+const buildNewJourney = async () => {
+    // let nearest = await findSoonestFromRandom();
+    const nearest = await findSoonestFromRandom(true);
+    // for (let i = 0; i < 4; i++) {
+    //     if (nearest) break;
+    //     // eslint-disable-next-line no-await-in-loop
+    //     nearest = await findSoonestFromRandom(true);
+    // }
+
+    if (!nearest) {
+        throw new Error('TODO: No journey found at this time');
+    }
+
+    const stops = await buildJourneyForNextHour(nearest);
+
+    // TODO: sort stops by time before writing
+    console.log('stops');
+    console.table(stops, ['category', 'line', 'number', 'name']);
+
+    if (stops) {
+        fs.writeFile(cfg.stopsPath, JSON.stringify(stops), { flag: 'w+' }, (e) => {
+            if (e) throw e;
+        });
+    }
 };
 
 module.exports = {
-    buildJourneyForNextHour,
-    findSoonestFromRandom,
+    refreshCurrentJourney,
+    buildNewJourney,
 };

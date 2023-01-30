@@ -1,4 +1,5 @@
 const { Temporal } = require('@js-temporal/polyfill');
+const fs = require('fs/promises');
 
 const pad = (n) => n.toString().padStart(2, '0');
 module.exports.toS = (s) => {
@@ -29,3 +30,22 @@ module.exports.lessThanXApart = (t1, t2, duration) => (
         { seconds: Math.abs(t1.epochSeconds - t2.epochSeconds) },
     ) === 1
 );
+
+module.exports.logProblems = (ps) => {
+    const n = Temporal.Now.instant().toString({ smallestUnit: 'second' }).replace(/:/g, '');
+
+    const kvToS = (k, v) => (
+        v instanceof Error ? { m: v.toString(), s: v.stack } : v
+    );
+    fs.writeFile(`../problems/${n}`, JSON.stringify(ps, kvToS), { flag: 'a' });
+};
+
+module.exports.stopInFuture = (stop, now) => {
+    const t = Temporal.ZonedDateTime.from(stop.departureTime || stop.arrivalTime);
+    return Temporal.ZonedDateTime.compare(t, now) >= 0;
+};
+
+module.exports.stopInNext = (stop, duration, now) => {
+    const t = Temporal.ZonedDateTime.from(stop.departureTime || stop.arrivalTime);
+    return Temporal.Duration.compare(t.since(now), duration);
+};

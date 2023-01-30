@@ -1,9 +1,8 @@
 const { Temporal } = require('@js-temporal/polyfill');
 const xml2js = require('xml2js');
 const keys = require('./keys.json');
-const {
-    nodeToStop, getStringFromDate,
-} = require('./consumerFns');
+const { getStringFromDate } = require('./consumerFns');
+const { Stop } = require('./Stop');
 
 const { DBClientID, DBApiKey } = keys;
 
@@ -38,7 +37,7 @@ const getPlanForTime = (evaNo, dateArg) => {
             if (!resp.timetable?.s?.length) {
                 throw Error(`Could not get plan for ${evaNo}/${date}/${hour}, no timetable stops`);
             }
-            return resp.timetable.s.map((n) => nodeToStop(n));
+            return resp.timetable.s.map((n) => Stop.from(n));
         });
 };
 
@@ -49,7 +48,7 @@ const getChanges = (evaNo, changeType = 'fchg') => (
                 throw Error(`Could not get changes for /${changeType}/${evaNo}, no timetable stops`);
             }
             const filtered = resp.timetable.s.filter((n) => (n.dp || n.ar));
-            return filtered.map((n) => nodeToStop(n));
+            return filtered.map((n) => Stop.from(n));
         })
 );
 
