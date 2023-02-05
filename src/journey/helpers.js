@@ -32,12 +32,13 @@ module.exports.lessThanXApart = (t1, t2, duration) => (
 );
 
 module.exports.logProblems = (ps) => {
+    console.warn('WARNING: Problems occured');
     const n = Temporal.Now.instant().toString({ smallestUnit: 'second' }).replace(/:/g, '');
 
     const kvToS = (k, v) => (
         v instanceof Error ? { m: v.toString(), s: v.stack } : v
     );
-    fs.writeFile(`../problems/${n}`, JSON.stringify(ps, kvToS), { flag: 'a' });
+    fs.writeFile(`../problems/${n}.json`, JSON.stringify(ps, kvToS), { flag: 'a' });
 };
 
 module.exports.stopInFuture = (stop, now) => {

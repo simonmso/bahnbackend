@@ -1,21 +1,9 @@
 const http = require('http');
 const fs = require('fs/promises');
 
-// code used with the hope of minimizing fs events
-// let jStops;
-// const refreshStops = () => {
-//     fs.readFile('./stops.json', { encoding: 'utf8' })
-//         .then((d) => {
-//             jStops = JSON.parse(d);
-//         });
-// };
-
-// refreshStops();
-// setInterval(refreshStops, 1000 * 5);
-
 const server = http.createServer();
 
-// TODO we shouldn't have to read from the fs every time a file is requested
+// we probably shouldn't read from the fs every time a file is requested
 const addFile = (url, resp, clbk = () => {}) => (
     fs.readFile(url, { encoding: 'utf8' })
         .then((data) => {
@@ -36,14 +24,11 @@ const handleError = (err, resp) => {
 server.on('request', (req, resp) => {
     const { method, url } = req;
     console.log('method', method, 'url', url);
+
     // api
     if (method === 'GET' && url === '/api/journey') {
-        // resp.setHeader('Content-Type', 'application/json');
-        // resp.write(jStops);
-        // resp.end();
-
         resp.setHeader('Content-Type', 'application/json');
-        addFile('./stops.json', resp)
+        addFile('../data/stops.json', resp)
             .then(() => {
                 resp.end();
             });

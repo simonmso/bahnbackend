@@ -1,6 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable no-unused-vars */
-// TODO
 const { Temporal } = require('@js-temporal/polyfill');
 const fs = require('fs/promises');
 const knownHbfs = require('./knownHbfs.json');
@@ -40,13 +37,6 @@ const updateWithDelays = (stops, evaNo) => (
         .then((changes) => stops.map((s) => applyChangesToStop(s, changes)))
 );
 
-const updateStopWithDelays = (s) => {
-    const changes = !s.departureTime && !s.arrivalTime
-        ? API.getAllChanges(s.eva)
-        : API.getRecentChanges(s.eva);
-    return changes.then((cs) => applyChangesToStop(s, cs));
-};
-
 const findSoonestDepartureFromStation = async (evaNo) => {
     const now = Temporal.Now.zonedDateTimeISO();
     const plans = [API.getPlanForTime(evaNo)];
@@ -54,20 +44,10 @@ const findSoonestDepartureFromStation = async (evaNo) => {
     if (now.minute > 30) plans.push(API.getPlanForTime(evaNo, now.add({ hours: 1 })));
 
     const relevant = await Promise.all(plans)
-        .then((r) => {
-            console.log('planned');
-
-            // console.table(r.flat(), ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
-
-            return updateWithDelays(r.flat(), evaNo);
-        })
-        .then((updated) => {
-            console.log('updated');
-
-            // console.table(updated, ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
-            return updated.filter((s) => stopIsRelevant(s));
-        })
+        .then((r) => updateWithDelays(r.flat(), evaNo))
+        .then((updated) => updated.filter((s) => stopIsRelevant(s)))
         .catch((e) => console.error(e));
+
     console.log('relevant');
     console.table(relevant, ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
 
@@ -80,16 +60,12 @@ const findSoonestDepartureFromStation = async (evaNo) => {
     });
 };
 
-const findSoonestFromRandom = async (hbf = false) => {
-    // TODO
-    // const stationName = getRandomKey(hbf ? knownHbfs : knownStations);
-    // const evaNo = knownStations[stationName];
-    const stationName = 'Berlin(forced)';
-    const evaNo = 8011160;
+const findSoonestFromName = async (name) => {
+    const evaNo = knownStations[name];
     const nearest = await findSoonestDepartureFromStation(evaNo);
     if (nearest) {
         nearest.eva = evaNo;
-        nearest.name = stationName;
+        nearest.name = name;
     }
     return nearest;
 };
@@ -149,21 +125,27 @@ const buildJourneyForNextHour = async (stop) => {
         else problems.push(newStop);
     }
 
-    if (problems.length) {
-        console.warn('WARNING: Problems occured');
-        logProblems(problems);
-    }
+    if (problems.length) logProblems(problems);
 
     return nextHour;
 };
 
 const refreshCurrentJourney = async (oldStops, now) => {
     let newStops = oldStops?.filter((s) => stopInFuture(s, now));
+    const problems = [];
 
     await Promise.all(newStops.map((s) => (
         API.getRecentChanges(s.eva)
             .then((cs) => applyChangesToStop(s, cs))
+            .catch((e) => (problems.push({
+                tripId: s.tripId,
+                name: s.name,
+                eva: s.eva,
+                problem: e,
+            })))
     )));
+
+    if (problems.length) logProblems(problems);
 
     // if the furthest stop is less than an hour away,
     // get some stops after it
@@ -181,21 +163,27 @@ const refreshCurrentJourney = async (oldStops, now) => {
 };
 
 const buildNewJourney = async () => {
-    // let nearest = await findSoonestFromRandom();
-    const nearest = await findSoonestFromRandom(true);
-    // for (let i = 0; i < 4; i++) {
-    //     if (nearest) break;
-    //     // eslint-disable-next-line no-await-in-loop
-    //     nearest = await findSoonestFromRandom(true);
-    // }
+    // first try a random station in all of germany
+    let stationName = getRandomKey(knownStations);
+    let nearest = await findSoonestFromName(stationName);
+
+    // then try a few random Hbfs
+    for (let i = 0; i < 4; i++) {
+        if (nearest) break;
+        stationName = getRandomKey(knownHbfs);
+        // eslint-disable-next-line no-await-in-loop
+        nearest = await findSoonestFromName(stationName);
+    }
+
+    // if all else fails, try berlin
+    if (!nearest) nearest = await findSoonestFromName('Berlin Hbf');
 
     if (!nearest) {
-        throw new Error('TODO: No journey found at this time');
+        throw new Error('No journey found at this time');
     }
 
     const stops = await buildJourneyForNextHour(nearest);
 
-    // TODO: sort stops by time before writing
     console.log('stops');
     console.table(stops, ['category', 'line', 'number', 'name']);
 
