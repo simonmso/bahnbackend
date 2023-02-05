@@ -1,5 +1,6 @@
 const http = require('http');
 const fs = require('fs/promises');
+const cfg = require('./config.json');
 
 const server = http.createServer();
 
@@ -28,7 +29,7 @@ server.on('request', (req, resp) => {
     // api
     if (method === 'GET' && url === '/api/journey') {
         resp.setHeader('Content-Type', 'application/json');
-        addFile('../data/stops.json', resp)
+        addFile(`${cfg.stopsPath}stops.json`, resp)
             .then(() => {
                 resp.end();
             });
@@ -38,21 +39,21 @@ server.on('request', (req, resp) => {
     else if (method === 'GET' && url === '/') {
         resp.setHeader('Content-Type', 'text/html');
 
-        addFile('../dist/index.html', resp)
+        addFile(`${cfg.distPath}index.html`, resp)
             .then(() => {
                 resp.end();
             }).catch((e) => handleError(e, resp));
     }
     else if (method === 'GET' && url === '/index.css') {
         resp.setHeader('Content-Type', 'text/css');
-        addFile('../dist/index.css', resp)
+        addFile(`${cfg.distPath}index.css`, resp)
             .then(() => {
                 resp.end();
             }).catch((e) => handleError(e, resp));
     }
     else if (method === 'GET' && url === '/main.js') {
         resp.setHeader('Content-Type', 'text/javascript; charset=utf-8');
-        addFile('../dist/main.js', resp)
+        addFile(`${cfg.distPath}main.js`, resp)
             .then(() => {
                 resp.end();
             }).catch((e) => handleError(e, resp));

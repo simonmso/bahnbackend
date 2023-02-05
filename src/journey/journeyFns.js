@@ -10,7 +10,7 @@ const {
 } = require('./helpers');
 const API = require('./consumer');
 const { logProblems } = require('./helpers');
-const cfg = require('./config.json');
+const cfg = require('../config.json');
 
 const applyChangesToStop = (s, changes) => {
     const change = changes.find((c) => c.id === s.id);
@@ -156,7 +156,7 @@ const refreshCurrentJourney = async (oldStops, now) => {
     }
 
     if (newStops) {
-        fs.writeFile(cfg.stopsPath, JSON.stringify(newStops), { flag: 'w+' }, (e) => {
+        fs.writeFile(`${cfg.stopsPath}stops.json`, JSON.stringify(newStops), { flag: 'w+' }, (e) => {
             if (e) throw e;
         });
     }
@@ -188,7 +188,7 @@ const buildNewJourney = async () => {
     console.table(stops, ['category', 'line', 'number', 'name']);
 
     if (stops) {
-        fs.writeFile(cfg.stopsPath, JSON.stringify(stops), { flag: 'w+' }, (e) => {
+        fs.writeFile(`${cfg.stopsPath}stops.json`, JSON.stringify(stops), { flag: 'w+' }, (e) => {
             if (e) throw e;
         });
     }

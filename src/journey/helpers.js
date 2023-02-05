@@ -1,5 +1,6 @@
 const { Temporal } = require('@js-temporal/polyfill');
 const fs = require('fs/promises');
+const cfg = require('../config.json');
 
 const pad = (n) => n.toString().padStart(2, '0');
 module.exports.toS = (s) => {
@@ -38,7 +39,7 @@ module.exports.logProblems = (ps) => {
     const kvToS = (k, v) => (
         v instanceof Error ? { m: v.toString(), s: v.stack } : v
     );
-    fs.writeFile(`../problems/${n}.json`, JSON.stringify(ps, kvToS), { flag: 'a' });
+    fs.writeFile(`${cfg.problemsPath}${n}.json`, JSON.stringify(ps, kvToS), { flag: 'a' });
 };
 
 module.exports.stopInFuture = (stop, now) => {

@@ -1,6 +1,6 @@
-This will at some point have more details on what this project is. For now:
+*This will at some point have more details on what this project is. For now:*
 
-### Installing
+## Installing
 `$ npm install`
 
 To run this backend, you'll need a [DB API Marketplace](https://developers.deutschebahn.com/db-api-marketplace/apis/frontpage) account. Once you have one, create file `./src/journey/keys.json` and structure it like so:
@@ -12,8 +12,12 @@ To run this backend, you'll need a [DB API Marketplace](https://developers.deuts
 }
 ```
 
+Then set up `/src/config.json` so that all paths correctly point where they're supposed to.
+- `stopsPath`: Path where you want `journey/index.js` to put generated stops
+- `problemsPath`: Path where you want problems to be logged
+- `distPath`: Path to the packed frontend.
 
-Copy the packed frontend into `/dist/`, so that the directory resembles:
+Copy the packed frontend into whatever you chose for `distPath`, so that the directory resembles:
 ```
 dist/
  ├─ index.css
@@ -22,14 +26,16 @@ dist/
 ```
 
 
-### Running
+## Running
 To serve the site, run
 
 `$ node /src/index.js`
 
-To keep the journey updated, every two minutes run
+To keep the journey updated, every two minutes run:
 
 `$ node /src/journey/index.js`
+
+*Note: This should be run from the same context as *
 
 To generate dummy data, run
 

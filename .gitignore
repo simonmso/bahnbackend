@@ -7,3 +7,4 @@ stops.json
 dist/
 problems/
 data/
+*.sh

@@ -6,9 +6,9 @@ const {
 } = require('./journeyFns');
 const { stopInFuture } = require('./helpers');
 const { Stop } = require('./Stop');
-const cfg = require('./config.json');
+const cfg = require('../config.json');
 
-const getCurrentStops = () => fs.readFile(cfg.stopsPath)
+const getCurrentStops = () => fs.readFile(`${cfg.stopsPath}stops.json`)
     .then((r) => JSON.parse(r).map((s) => new Stop(s)))
     .catch(() => ([]));
 
