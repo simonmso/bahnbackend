@@ -1,5 +1,5 @@
 {
-    "stopsPath": "/home/simon/projects/bahn/backend/data/",
-    "problemsPath" : "/home/simon/projects/bahn/backend/problems/",
-    "distPath": "/home/simon/projects/bahn/backend/dist/"
+    "stopsPath": "/root/projects/bahn/backend/data/",
+    "problemsPath" : "/root/projects/bahn/backend/problems/",
+    "distPath": "/root/projects/bahn/backend/dist/"
 }

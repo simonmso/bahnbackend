@@ -29,6 +29,7 @@ server.on('request', (req, resp) => {
     // api
     if (method === 'GET' && url === '/api/journey') {
         resp.setHeader('Content-Type', 'application/json');
+        resp.setHeader('Access-Control-Allow-Origin', '*'); // Only use while developing
         addFile(`${cfg.stopsPath}stops.json`, resp)
             .then(() => {
                 resp.end();
@@ -58,10 +59,19 @@ server.on('request', (req, resp) => {
                 resp.end();
             }).catch((e) => handleError(e, resp));
     }
+    else if (method === 'GET'
+        && ['/favicon-192.png', '/favicon-180.png', '/favicon-128.png', '/favicon-32.png'].includes(url)) {
+        resp.setHeader('Content-Type', 'image/png');
+        fs.readFile(`${cfg.distPath}${url.slice(1)}`)
+            .then((data) => {
+                resp.write(data);
+                resp.end();
+            }).catch((e) => handleError(e, resp));
+    }
     else {
         if (method === 'GET') resp.statusCode = 404;
         else resp.statusCode = 501;
         resp.end();
     }
 });
-server.listen(8080);
+server.listen(80);

@@ -8,7 +8,6 @@ const { DBClientID, DBApiKey } = keys;
 
 let totalRequests = 0;
 const request = (endpoint) => {
-    // if (totalRequests === 0) setTimeout(resetRequests, 1000 * 65);
     totalRequests += 1;
     console.log('requesting:', totalRequests, endpoint);
     if (totalRequests > 45) {
@@ -26,13 +25,13 @@ const request = (endpoint) => {
         .then(xml2js.parseStringPromise);
 };
 
-const getPlanForTime = (evaNo, dateArg) => {
+const getPlanForTime = async (evaNo, dateArg) => {
     let time = dateArg || Temporal.Now.zonedDateTimeISO();
     time = time.withTimeZone('Europe/Berlin');
     const date = getStringFromDate(time);
     const hour = time.hour.toString().padStart(2, '0');
 
-    return request(`/plan/${evaNo}/${date}/${hour}`)
+    return await request(`/plan/${evaNo}/${date}/${hour}`)
         .then((resp) => {
             if (!resp.timetable?.s?.length) {
                 throw Error(`Could not get plan for ${evaNo}/${date}/${hour}, no timetable stops`);

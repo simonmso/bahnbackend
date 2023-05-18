@@ -46,8 +46,8 @@ const findSoonestDepartureFromStation = async (evaNo) => {
     const relevant = await Promise.all(plans)
         .then((r) => updateWithDelays(r.flat(), evaNo))
         .then((updated) => updated.filter((s) => stopIsRelevant(s)))
-        .catch((e) => console.error(e));
-
+        .catch(logProblems);
+        
     console.log('relevant');
     console.table(relevant, ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
 
@@ -95,7 +95,6 @@ const findStopInStation = async (tripId, stationName, latestStopTime, future = t
     throw new Error('no stop found in next ten hours');
 };
 
-// eslint-disable-next-line no-unused-vars
 const buildJourneyForNextHour = async (stop) => {
     let latestStopTime = stop.plannedDepartureTime;
     const nextHour = [stop];
@@ -125,7 +124,7 @@ const buildJourneyForNextHour = async (stop) => {
         else problems.push(newStop);
     }
 
-    if (problems.length) logProblems(problems);
+    if (problems.length) await logProblems(problems);
 
     return nextHour;
 };
@@ -145,7 +144,7 @@ const refreshCurrentJourney = async (oldStops, now) => {
             })))
     )));
 
-    if (problems.length) logProblems(problems);
+    if (problems.length) await logProblems(problems);
 
     // if the furthest stop is less than an hour away,
     // get some stops after it

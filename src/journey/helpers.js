@@ -32,14 +32,16 @@ module.exports.lessThanXApart = (t1, t2, duration) => (
     ) === 1
 );
 
-module.exports.logProblems = (ps) => {
-    console.warn('WARNING: Problems occured');
-    const n = Temporal.Now.instant().toString({ smallestUnit: 'second' }).replace(/:/g, '');
+module.exports.logProblems = async (ers) => {
+    const problems = ers instanceof Array ? ers : [ers];
 
+    const n = Temporal.Now.instant().toString({ smallestUnit: 'minute' }).replace(/:/g, '');
+    
     const kvToS = (k, v) => (
         v instanceof Error ? { m: v.toString(), s: v.stack } : v
     );
-    fs.writeFile(`${cfg.problemsPath}${n}.json`, JSON.stringify(ps, kvToS), { flag: 'a' });
+
+    await fs.writeFile(`${cfg.problemsPath}${n}.json`, JSON.stringify(problems, kvToS), { flag: 'a+' });
 };
 
 module.exports.stopInFuture = (stop, now) => {
