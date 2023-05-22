@@ -17,6 +17,8 @@ Once a journey has been found, running `index.js` again will just rehydrate the 
 The Node server for the site is defined in `./src/index.js`. It is managed with [pm2](https://pm2.keymetrics.io/). The packed frontend is read from the directory defined in `config.json`'s `distPath`.
 
 ## Installing
+Fork this repository, then
+
 `$ npm install`
 
 To run this backend, you'll need a [DB API Marketplace](https://developers.deutschebahn.com/db-api-marketplace/apis/frontpage) account. Once you have one, create file `./src/journey/keys.json` and structure it like so:
@@ -36,6 +38,7 @@ Then set up `/src/config.json` so that all paths correctly point where they're s
 Copy the packed frontend into whatever you chose for `distPath`, so that the directory resembles:
 ```
 dist/
+ ├─ [favicons]
  ├─ index.css
  ├─ index.html
  └─ main.js

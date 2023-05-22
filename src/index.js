@@ -29,7 +29,7 @@ server.on('request', (req, resp) => {
     // api
     if (method === 'GET' && url === '/api/journey') {
         resp.setHeader('Content-Type', 'application/json');
-        resp.setHeader('Access-Control-Allow-Origin', '*'); // Only use while developing
+        // resp.setHeader('Access-Control-Allow-Origin', '*'); // Only use while developing
         addFile(`${cfg.stopsPath}stops.json`, resp)
             .then(() => {
                 resp.end();
