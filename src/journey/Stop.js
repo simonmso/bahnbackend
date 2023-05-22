@@ -60,9 +60,7 @@ class Stop {
     with(newStop) {
         const newProps = {};
         this.#properties.forEach((p) => {
-            // console.log('this[p]', this[p], 'newStop[p]', newStop[p]);
             newProps[p] = newStop[p] || this[p];
-            // console.log('newProps[p]', newProps[p]);
         });
         return new Stop(newProps);
     }

@@ -15,19 +15,10 @@ const getCurrentStops = () => fs.readFile(`${cfg.stopsPath}stops.json`)
 const main = async () => {
     const stops = await getCurrentStops();
 
-    console.log('old stops');
-    console.table(stops, ['category', 'line', 'number', 'name']);
-
     const now = Temporal.Now.zonedDateTimeISO();
     const notOver = stops?.some?.((s) => stopInFuture(s, now));
-    if (notOver) {
-        console.log('completing next hour');
-        refreshCurrentJourney(stops, now);
-    }
-    else {
-        console.log('building journey');
-        buildNewJourney();
-    }
+    if (notOver) refreshCurrentJourney(stops, now);
+    else buildNewJourney();
 };
 
 main();

@@ -9,7 +9,6 @@ const { DBClientID, DBApiKey } = keys;
 let totalRequests = 0;
 const request = (endpoint) => {
     totalRequests += 1;
-    console.log('requesting:', totalRequests, endpoint);
     if (totalRequests > 45) {
         throw new Error('Reached request limit (in place because the API has a 60 request limit)');
     }
@@ -31,22 +30,18 @@ const getPlanForTime = async (evaNo, dateArg) => {
     const date = getStringFromDate(time);
     const hour = time.hour.toString().padStart(2, '0');
 
-    return await request(`/plan/${evaNo}/${date}/${hour}`)
+    return request(`/plan/${evaNo}/${date}/${hour}`)
         .then((resp) => {
-            if (!resp.timetable?.s?.length) {
-                throw Error(`Could not get plan for ${evaNo}/${date}/${hour}, no timetable stops`);
-            }
-            return resp.timetable.s.map((n) => Stop.from(n));
+            const tt = resp.timetable;
+            return tt.s?.length ? tt.s.map((n) => Stop.from(n)) : [];
         });
 };
 
 const getChanges = (evaNo, changeType = 'fchg') => (
     request(`/${changeType}/${evaNo}`)
         .then((resp) => {
-            if (!resp.timetable?.s?.length) {
-                throw Error(`Could not get changes for /${changeType}/${evaNo}, no timetable stops`);
-            }
-            const filtered = resp.timetable.s.filter((n) => (n.dp || n.ar));
+            const tt = resp.timetable;
+            const filtered = tt?.s?.length ? tt.s.filter((n) => (n.dp || n.ar)) : [];
             return filtered.map((n) => Stop.from(n));
         })
 );

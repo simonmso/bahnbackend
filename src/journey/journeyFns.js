@@ -47,9 +47,6 @@ const findSoonestDepartureFromStation = async (evaNo) => {
         .then((r) => updateWithDelays(r.flat(), evaNo))
         .then((updated) => updated.filter((s) => stopIsRelevant(s)))
         .catch(logProblems);
-        
-    console.log('relevant');
-    console.table(relevant, ['category', 'line', 'number', 'name', 'futureStops', 'departureTime']);
 
     if (!relevant?.length) return undefined;
 
@@ -182,9 +179,6 @@ const buildNewJourney = async () => {
     }
 
     const stops = await buildJourneyForNextHour(nearest);
-
-    console.log('stops');
-    console.table(stops, ['category', 'line', 'number', 'name']);
 
     if (stops) {
         fs.writeFile(`${cfg.stopsPath}stops.json`, JSON.stringify(stops), { flag: 'w+' }, (e) => {

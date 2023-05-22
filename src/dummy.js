@@ -1,6 +1,6 @@
 const { Temporal } = require('@js-temporal/polyfill');
 const fs = require('fs');
-const { Stop } = require('./Stop');
+const { Stop } = require('./journey/Stop');
 
 // this generates dummy data
 
