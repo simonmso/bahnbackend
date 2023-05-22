@@ -1,6 +1,8 @@
-# [bahnzeit.site](bahnzeit.site)'s backend
+# [bahnzeit.site](http://bahnzeit.site)'s backend
 
 *Visit [bahnFrontend](https://github.com/simonmso/bahnfrontend) for information about the frontend.*
+
+<img src="https://github.com/simonmso/bahnfrontend/blob/main/preview.png?raw=true" width="800" />
 
 This backend is responsible for two things:
 - Searching for trains and building a route, and
