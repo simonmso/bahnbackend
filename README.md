@@ -1,4 +1,5 @@
-# [bahnzeit.site](http://bahnzeit.site)'s backend
+*Note: This site is no longer online.*
+# bahnzeit.site's backend
 
 *Visit [bahnFrontend](https://github.com/simonmso/bahnfrontend) for information about the frontend.*
 
